@@ -2,7 +2,9 @@ import pygame
 import io
 import os
 import random
+import math
 
+entropia = 0
 def emisor():
   with open('prue.mp3', 'rb') as mp3_file:
     contenido_binario = mp3_file.read()
@@ -16,10 +18,17 @@ def receptor(contenido_binario):
 
 
 def introducir_ruido(paquete, probabilidad_ruido):
+  lista=[]
   paquete_con_ruido = bytearray(paquete)
   for i in range(len(paquete_con_ruido)):
     if random.random() < probabilidad_ruido:
       paquete_con_ruido[i] = random.randint(0, 255)
+      lista.append(1/1024)
+  global entropia
+  for i in lista:
+    entropia -= (i * math.log2(i))
+    #print(entropia)
+  
   return bytes(paquete_con_ruido)
 
 def dividir_paquetes(contenido_binario, t_paquete):
@@ -57,13 +66,12 @@ def Destino(contenido_binario):
     pygame.time.Clock().tick(10)
 
 t_paquete = 1024
-probabilidad_ruido = 0.0001  
-
+probabilidad_ruido = 0.0001
 contenido_binario = emisor()
 contenido_i = transmisor(contenido_binario)
 
 contenido_reensamblado = canal(contenido_i, t_paquete, probabilidad_ruido)
 
 contenido_original = receptor(contenido_reensamblado)
-
+print(entropia)
 Destino(contenido_original)
