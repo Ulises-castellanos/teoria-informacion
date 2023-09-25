@@ -10,11 +10,18 @@ def emisor():
     contenido_binario = mp3_file.read()
   return contenido_binario
 
-def transmisor(contenido_binario):
+def inversor(contenido_binario):
   return bytes([~x & 0xFF for x in contenido_binario])
 
-def receptor(contenido_binario):
-  return bytes([~x & 0xFF for x in contenido_binario])
+def transmisor(contenido_binario,t_paquete):
+  contenido_i = inversor(contenido_binario)
+  paquetes = dividir_paquetes(contenido_i, t_paquete)
+  return paquetes
+
+def receptor(paquetes_con_ruido):
+  contenido_reensamblado = unir_paquetes(paquetes_con_ruido)
+  contenido_original = inversor(contenido_reensamblado)
+  return contenido_original
 
 
 def introducir_ruido(paquete, probabilidad_ruido):
@@ -50,11 +57,9 @@ def unir_paquetes(paquetes):
     contenido_binario += paquete
   return contenido_binario
 
-def canal(contenido_i, t_paquete, probabilidad_ruido):
-  paquetes = dividir_paquetes(contenido_i, t_paquete)
+def canal(paquetes, probabilidad_ruido):
   paquetes_con_ruido = [introducir_ruido(paquete, probabilidad_ruido) for paquete in paquetes]
-  contenido_reensamblado = unir_paquetes(paquetes_con_ruido)
-  return contenido_reensamblado
+  return paquetes_con_ruido
 
 def Destino(contenido_binario):
   os.environ['SDL_AUDIODRIVER'] = 'directsound'
@@ -68,10 +73,10 @@ def Destino(contenido_binario):
 t_paquete = 1024
 probabilidad_ruido = 0.0001
 contenido_binario = emisor()
-contenido_i = transmisor(contenido_binario)
 
-contenido_reensamblado = canal(contenido_i, t_paquete, probabilidad_ruido)
+paquetes = transmisor(contenido_binario,t_paquete)
+paquetes_con_ruido = canal(paquetes, probabilidad_ruido)
 
-contenido_original = receptor(contenido_reensamblado)
+contenido_original = receptor(paquetes_con_ruido)
 print(entropia)
 Destino(contenido_original)
