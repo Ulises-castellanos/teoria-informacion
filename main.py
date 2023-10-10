@@ -6,8 +6,32 @@ import math
 from collections import Counter
 
 entropia = 0
+
+class Nodo:
+  def __init__(self, nombre, dato):
+    self.nombre = nombre
+    self.dato = dato
+    self.izquierda = None
+    self.derecha = None
+    self.valor_binario = ""
+
+def calcular_binario(arbol, valor_binario, asd):
+  if arbol is not None:
+    arbol.valor_binario = valor_binario
+    asd=calcular_binario(arbol.izquierda, valor_binario + "0", asd)
+    if arbol.izquierda is None:
+      asd.append([arbol.nombre,valor_binario])
+    asd=calcular_binario(arbol.derecha, valor_binario + "1", asd)
+  return asd
+
+def imprimir(arbol):
+  if arbol is not None:
+    print("Nodo:", arbol.nombre, "Valor Binario:", arbol.valor_binario)
+    imprimir(arbol.izquierda)
+    imprimir(arbol.derecha)
+
 def emisor():
-  with open('prue2.mp3', 'rb') as mp3_file:
+  with open('prue4.mp3', 'rb') as mp3_file:
     contenido_binario = mp3_file.read()
   return contenido_binario
 
@@ -23,10 +47,19 @@ def inversor(contenido_binario):
 def transmisor(contenido_binario,t_paquete):
   contenido_i = inversor(contenido_binario)
   paquetes = dividir_paquetes(contenido_i, t_paquete)
-  return paquetes
+  prob = probabilidad(paquetes)
+  num_ord = sorted(prob, key=lambda x: (x[1], x[0]))
+  #print(num_ord)
+  lista_h = huffman(num_ord)
+  print("p",paquetes[:5])
+  paquetes = codificar(1, 0, paquetes, lista_h)
+  print("p",paquetes[:5])
+  return paquetes, lista_h
 
-def receptor(paquetes_con_ruido):
-  contenido_reensamblado = unir_paquetes(paquetes_con_ruido)
+def receptor(paquetes_con_ruido, lista_h):
+  paquetes = codificar(0,1,paquetes_con_ruido, lista_h )
+  print("p",paquetes[:5])
+  contenido_reensamblado = unir_paquetes(paquetes)
   contenido_original = inversor(contenido_reensamblado)
   return contenido_original
 
@@ -64,6 +97,7 @@ def canal(paquetes, probabilidad_ruido):
   #paquetes_con_ruido = [introducir_ruido(paquete, probabilidad_ruido) for paquete in paquetes]
   #return paquetes_con_ruido
   return paquetes
+
 def Destino(contenido_binario):
   os.environ['SDL_AUDIODRIVER'] = 'directsound'
   pygame.init()
@@ -88,20 +122,62 @@ def bits_a_bytes(bits_str):
   bytes_resultantes = bytes(bytes_data)
   return bytes_resultantes
 
-t_paquete = 4
+def huffman(num_ord):
+  nodos = []
+  for nombre, numero in num_ord:
+    nodo = Nodo(nombre, numero)
+    nodos.append(nodo)
+
+  while len(nodos) > 1:
+    nodos.sort(key=lambda x: x.dato)
+    nodo1 = nodos.pop(0)
+    #print("nodo1",str(nodo1.nombre))
+    nodo2 = nodos.pop(0)
+    #print("nodo2",str(nodo2.nombre))
+    suma = nodo1.dato + nodo2.dato
+    nuevo_nodo = Nodo(suma,suma)
+    #print("dato",nuevo_nodo.dato)
+    nuevo_nodo.izquierda = nodo2
+    nuevo_nodo.derecha = nodo1
+    nodos.append(nuevo_nodo)
+
+  arbol_huffman = nodos[0]
+  valor_binario=""
+  asd=[]
+  lista_h = calcular_binario(arbol_huffman, valor_binario, asd)
+
+  imprimir(arbol_huffman)
+  #print(lista_h)
+  return lista_h
+
+def codificar(uno, dos, paquetes, lista_h):
+  for n in lista_h:
+    if n[dos] in paquetes:
+      existe=True
+    else: existe=False
+    while existe == True:
+      #print(n[0])
+      ind = paquetes.index(n[dos])
+      paquetes[ind] = n[uno]
+      #print(paquetes)
+      if n[dos] in paquetes:
+        existe=True
+      else: existe=False
+  return paquetes
+
+
+t_paquete = 64
 probabilidad_ruido = 0.0001
 contenido_bytes = emisor()
 contenido_binario =convertir_a_bits(contenido_bytes)
 
-paquetes = transmisor(contenido_binario,t_paquete)
+paquetes, lista_h = transmisor(contenido_binario,t_paquete)
+#print(paquetes)
 
-prob = probabilidad(paquetes)
-num_ord = sorted(prob, key=lambda x: (x[1], x[0]))
-print(num_ord)
-print(len(num_ord))
 paquetes_con_ruido = canal(paquetes, probabilidad_ruido)
 
-contenido_original = receptor(paquetes_con_ruido)
+contenido_original = receptor(paquetes_con_ruido, lista_h)
 print(entropia)
 bytes_resultantes = bits_a_bytes(contenido_original)
 Destino(bytes_resultantes)
+
