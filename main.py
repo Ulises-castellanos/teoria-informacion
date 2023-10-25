@@ -41,7 +41,7 @@ def transmisor(contenido_binario,t_paquete):
   prob = probabilidad(paquetes)
   paq_num = list(enumerate(paquetes, start=1))
   paquetes = [[nombre, numero] for numero, nombre in paq_num]
-  res = int(input("Que codificacion quieres usar?"))
+  res = int(input("Que codificacion quieres usar?\nHuffman = 1\nShannon-Fano=2"))
   print("p",paquetes[:5])
   if res == 1:
     lista_h = huffman(prob)
