@@ -31,21 +31,17 @@ def bits_a_bytes(bits_str):
   bytes_resultantes = bytes(bytes_data)
   return bytes_resultantes
 
-def inversor(contenido_binario):
-  #return bytes([~x & 0xFF for x in contenido_binario])
-  return contenido_binario
-
 def transmisor(contenido_binario,t_paquete):
-  contenido_i = inversor(contenido_binario)
-  paquetes = dividir_paquetes(contenido_i, t_paquete)
+  paquetes = dividir_paquetes(contenido_binario, t_paquete)
   prob = probabilidad(paquetes)
   paq_num = list(enumerate(paquetes, start=1))
   paquetes = [[nombre, numero] for numero, nombre in paq_num]
-  res = int(input("Que codificacion quieres usar?\nHuffman = 1\nShannon-Fano=2"))
-  print("p",paquetes[:5])
+  
+  res = int(input("Que codificacion quieres usar?\nHuffman = 1\nShannon-Fano=2\nInversor=3\nDelta=4\n"))
+  
   if res == 1:
     lista_h = huffman(prob)
-    paquetes = codificar(1, 0, paquetes, lista_h)
+  
   elif res == 2:
     nodos = []
     for nombre, numero in prob:
@@ -55,17 +51,31 @@ def transmisor(contenido_binario,t_paquete):
     lista_h=[]
     for i in nodos:
       lista_h.append([i.nombre,i.valor_binario])
-    paquetes = codificar(1, 0, paquetes, lista_h)
-  print("p",paquetes[:5])
+    print("Lista handshake de Shannon-Fano\n",lista_h[:5],"\n")
+  
+  elif res == 3:
+    lista_h = inversor(prob)
+  
+  elif res == 4:
+    lista_h = delta(prob)
+  
+  print("Paquetes sin codificar\n",paquetes[:5],"\n")
+  paquetes = codificar(1, 0, paquetes, lista_h)
+  print("Paquetes codificados\n",paquetes[:5],"\n")
   return paquetes, lista_h
 
-def receptor(paquetes_con_ruido, lista_h):
-  paquetes = codificar(0,1,paquetes_con_ruido, lista_h )
-  print("p",paquetes[:5])
-  contenido_reensamblado = unir_paquetes(paquetes)
-  contenido_original = inversor(contenido_reensamblado)
-  return contenido_original
+def dividir_paquetes(contenido_binario, t_paquete):
+  paquetes = []
+  pps = []
+  for i in range(0, len(contenido_binario), t_paquete):
+    paquete = contenido_binario[i:i + t_paquete]
+    paquetes.append(paquete)
+  return paquetes
 
+def canal(paquetes, probabilidad_ruido):
+  #paquetes_con_ruido = [introducir_ruido(paquete, probabilidad_ruido) for paquete in paquetes]
+  #return paquetes_con_ruido
+  return paquetes
 
 def introducir_ruido(paquete, probabilidad_ruido):
   lista=[]
@@ -77,30 +87,19 @@ def introducir_ruido(paquete, probabilidad_ruido):
   global entropia
   for i in lista:
     entropia -= (i * math.log2(i))
-    #print(entropia)
-  
+    #print(entropia)  
   return bytes(paquete_con_ruido)
 
-def dividir_paquetes(contenido_binario, t_paquete):
-  paquetes = []
-  pps = []
-  n = 0
-  for i in range(0, len(contenido_binario), t_paquete):
-    n += 1
-    #print("d", n)
-    paquete = contenido_binario[i:i + t_paquete]
-    paquetes.append(paquete)
-  return paquetes
+def receptor(paquetes_con_ruido, lista_h):
+  paquetes = codificar(0,1,paquetes_con_ruido, lista_h )
+  print("Paquetes restablecidos\n",paquetes[:5],"\n")
+  contenido_original = unir_paquetes(paquetes)
+  return contenido_original
 
 def unir_paquetes(paquetes):
   paquetes = [item[0] for item in paquetes]
   contenido_reensamblado = ''.join(paquetes)
   return contenido_reensamblado
-
-def canal(paquetes, probabilidad_ruido):
-  #paquetes_con_ruido = [introducir_ruido(paquete, probabilidad_ruido) for paquete in paquetes]
-  #return paquetes_con_ruido
-  return paquetes
 
 def Destino(contenido_binario):
   os.environ['SDL_AUDIODRIVER'] = 'directsound'
@@ -111,15 +110,15 @@ def Destino(contenido_binario):
   while pygame.mixer.music.get_busy():
     pygame.time.Clock().tick(10)
 
+
 def probabilidad(numeros):
   prob=[]
   rep = Counter(numeros)
-  #print(rep)
   for i in rep:
     prob.append([i,rep[i]/len(numeros)])
-  #print(prob)
   return prob
 
+### Primer metodo de codificacion Huffman
 def huffman(num_ord):
   nodos = []
   for nombre, numero in num_ord:
@@ -129,9 +128,7 @@ def huffman(num_ord):
   while len(nodos) > 1:
     nodos.sort(key=lambda x: x.dato)
     nodo1 = nodos.pop(0)
-    #print("nodo1",str(nodo1.nombre))
     nodo2 = nodos.pop(0)
-    #print("nodo2",str(nodo2.nombre))
     suma = nodo1.dato + nodo2.dato
     nuevo_nodo = Nodo(suma,suma)
     #print("dato",nuevo_nodo.dato)
@@ -143,9 +140,8 @@ def huffman(num_ord):
   valor_binario=""
   asd=[]
   lista_h = calcular_binario(arbol_huffman, valor_binario, asd)
-
   #imprimir(arbol_huffman)
-  #print(lista_h)
+  print("Lista handshake de Huffman\n",lista_h[:5],"\n")
   return lista_h
 
 def calcular_binario(arbol, valor_binario, asd):
@@ -163,6 +159,7 @@ def imprimir(arbol):
     imprimir(arbol.izquierda)
     imprimir(arbol.derecha)
 
+### Segundo metodo de codificacfion Shannon-Fano
 def sf(nodos):
   nodos.sort(reverse=True, key=lambda x: x.dato)
   izq, der = [], []
@@ -197,6 +194,41 @@ def sf(nodos):
     nodos.append(i)
   nodos.sort(reverse=True, key=lambda x: x.dato)
   return nodos
+
+### Tercer metodo de codificacionInversor
+### Toma cada bit y lo convierte en su inverso, es decir convierte 1 a 0 y viceversa
+def inversor(prob):
+  lista_h = []
+  for i in prob:
+    paq_l = list(i[0])
+    for n in range(len(paq_l)):
+      if paq_l[n] == "1":
+        paq_l[n] = "0"
+      else:
+        paq_l[n] = "1"
+    uno = "".join(paq_l)
+    lista_h.append([i[0],uno])
+  print("Lista handshake de Inversor\n",lista_h[:5],"\n")
+  return lista_h
+
+### Cuarto metodo de codificacion Delta
+### Conserva el primer bit, recorre el resto de los bits comparando el bit actual con el anterior, 
+### si es el mismo se agrega un 0 y si es distinto se agrega 1
+def delta(prob):
+  lista_h= []
+  for i in prob:
+    delt = [i[0][0]]
+    for n in range(1, len(i[0])):
+      act = i[0][n]
+      ant = i[0][n - 1]
+      if act == ant:
+        delt.append("0")
+      else:
+        delt.append("1")
+    var=''.join(delt)
+    lista_h.append([i[0],var])
+  print("Lista handshake de Delta\n",lista_h[:5],"\n")
+  return lista_h
 
 def codificar(uno, dos, paquetes, lista_h):
   for i in range(len(paquetes)):
