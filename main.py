@@ -90,8 +90,8 @@ def canal(paquetes, prob_ruido):
     canales[res-1][1] = canales[res-1][0]
     canales[res-1][0] = paq
     paqr = ruido_perd(canales[res-1][1], prob_ruido)
-    print(paqr)
     if paqr is not None:
+      print("paquete enviado por el canal ",res,":", paqr)
       nuevos_paq.append(paqr)
       if len(nuevos_paq) > 1 and  nuevos_paq[-1][1] != nuevos_paq[-2][1]+1 :
         num = nuevos_paq[-1][1]-nuevos_paq[-2][1]-1
