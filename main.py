@@ -72,23 +72,142 @@ def dividir_paquetes(contenido_binario, t_paquete):
     paquetes.append(paquete)
   return paquetes
 
-def canal(paquetes, probabilidad_ruido):
-  #paquetes_con_ruido = [introducir_ruido(paquete, probabilidad_ruido) for paquete in paquetes]
-  #return paquetes_con_ruido
-  return paquetes
+def canal(paquetes, prob_ruido):
+  filas = 5
+  columnas = 2
+  canales = [[None for n in range(columnas)] for n in range(filas)]
+  nuevos_paq = []
+  res = int(input("Que canal deseas usar?"))
+  indice = 0
+  pa_per =[]
+  can_per = None
+  fin = len(paquetes)
+  print("fin", fin)
+  #for i in range(0,len(paquetes)+1):
+  #while indice < len(paquetes)+10
+  while len(paquetes)> len(nuevos_paq):
+    if len(paquetes)>0:
+      print("indice", indice)
+      if indice < len(paquetes):
+        paq = paquetes[indice]
+      else: paq = None
+    canales[res-1][1] = canales[res-1][0]
+    canales[res-1][0] = paq
+    paqr = ruido_perd(canales[res-1][1], prob_ruido)
+    print(paqr)
+    if paqr is not None:
+      nuevos_paq.append(paqr)
+      if len(nuevos_paq) > 1 and  nuevos_paq[-1][1] != nuevos_paq[-2][1]+1 :
+        num = nuevos_paq[-1][1]-nuevos_paq[-2][1]-1
+        perd= nuevos_paq[-1][1]
+        print("paquetes perdidos", num)
+        for i in range(0,num):
+          perd -=1
+          pa_per.append(perd)
+        pa_per.append(None)
+        print(pa_per)
+        indice = nuevos_paq[-1][1]-1
+        if res < filas:
+          canales[res-1][0], canales[res-1][1] = None, None
+          if canales[res][0] != None or canales[res][1] != None:
+            if can_per == None:
+              can_per =res
+              print("canal perdidos", can_per)
+            if res == 4:
+              res == 1
+            else: res +=2
+          else: 
+            if can_per == None:
+              if res == 4:
+                can_per = 1
+              else: can_per = res + 2
+              print("canal perdidos", can_per)
+            res +=1
+        else:
+          canales[res-1][0], canales[res-1][1] = None, None
+          if canales[0][0] != None or canales[0][1] != None:
+            if can_per == None:
+              can_per =res
+            res = 2
+          else : 
+            if can_per == None:
+              can_per = 2
+              print("canal perdidos", can_per)
+            res = 1
+        print("cambio de canal al", res)
+      elif nuevos_paq[0][1] > 1 and len(nuevos_paq) == 1:
+        perd = nuevos_paq[0][1]
+        print("paquetes perdidos", perd-1)
+        while perd > 1:
+          perd -=1
+          pa_per.append(perd)
+        pa_per.append(None)
+        print(pa_per)
+        indice = nuevos_paq[-1][1]-1
+        if res < filas:
+          canales[res-1][0], canales[res-1][1] = None, None
+          if canales[res][0] != None or canales[res][1] != None:
+            if can_per == None:
+              can_per =res
+              print("canal perdidos", can_per)
+            if res == 4:
+              res == 1
+            else: res +=2
+          else: 
+            if can_per == None:
+              if res == 4:
+                can_per = 1
+              else: can_per = res + 2
+              print("canal perdidos", can_per)
+            res +=1
+        else:
+          canales[res-1][0], canales[res-1][1] = None, None
+          if canales[0][0] != None or canales[0][1] != None:
+            if can_per == None:
+              can_per = 1
+              print("canal perdidos", can_per)
+            res = 2
+          else : 
+            if can_per == None:
+              can_per = 2
+              print("canal perdidos", can_per)
+            res = 1
+        print("cambio de canal al", res)
+    elif indice == fin:
+        perd = fin
+        while perd > nuevos_paq[-1][1]:
+          pa_per.append(perd)
+          perd-=1
+        pa_per.append(None)
+        print(pa_per)
+        if can_per == None:
+          if res < 5:
+            can_per = res+1
+          else: can_per =1
+    indice +=1
+    if len(pa_per) > 0 :
+      in_per = pa_per.pop(0)
+      if in_per == None:
+        paq = in_per
+      else: 
+        paq = paquetes[in_per-1]
+      canales[can_per-1][1] = canales[can_per-1][0]
+      canales[can_per-1][0] = paq
+      if canales[can_per-1][1] is not None:
+        nuevos_paq.append(canales[can_per-1][1])
+      nuevos_paq = sorted(nuevos_paq, key=lambda x: x[1])
+    else: 
+      if can_per != None:
+        canales[can_per-1][0], canales[can_per-1][1] = None, None
+      can_per = None
+  return nuevos_paq
 
-def introducir_ruido(paquete, probabilidad_ruido):
-  lista=[]
-  paquete_con_ruido = bytearray(paquete)
-  for i in range(len(paquete_con_ruido)):
-    if random.random() < probabilidad_ruido:
-      paquete_con_ruido[i] = random.randint(0, 255)
-      lista.append(1/1024)
-  global entropia
-  for i in lista:
-    entropia -= (i * math.log2(i))
-    #print(entropia)  
-  return bytes(paquete_con_ruido)
+def ruido_perd(paq, prob_ruido):
+  num = random.randint(1, 100)
+  if num <= prob_ruido:
+    paq = None
+  return paq
+
 
 def receptor(paquetes_con_ruido, lista_h):
   paquetes = codificar(0,1,paquetes_con_ruido, lista_h )
@@ -195,7 +314,7 @@ def sf(nodos):
   nodos.sort(reverse=True, key=lambda x: x.dato)
   return nodos
 
-### Tercer metodo de codificacionInversor
+### Tercer metodo de codificacion Inversor
 ### Toma cada bit y lo convierte en su inverso, es decir convierte 1 a 0 y viceversa
 def inversor(prob):
   lista_h = []
@@ -240,7 +359,7 @@ def codificar(uno, dos, paquetes, lista_h):
 
 
 t_paquete = 64
-probabilidad_ruido = 0.0001
+probabilidad_ruido = 90
 contenido_bytes = emisor()
 contenido_binario =convertir_a_bits(contenido_bytes)
 
