@@ -77,17 +77,13 @@ def canal(paquetes, prob_ruido):
   columnas = 2
   canales = [[None for n in range(columnas)] for n in range(filas)]
   nuevos_paq = []
-  res = int(input("Que canal deseas usar?"))
+  res = int(input("Que canal deseas usar? del 1 al 5\n"))
   indice = 0
   pa_per =[]
   can_per = None
   fin = len(paquetes)
-  print("fin", fin)
-  #for i in range(0,len(paquetes)+1):
-  #while indice < len(paquetes)+10
   while len(paquetes)> len(nuevos_paq):
     if len(paquetes)>0:
-      print("indice", indice)
       if indice < len(paquetes):
         paq = paquetes[indice]
       else: paq = None
@@ -359,7 +355,7 @@ def codificar(uno, dos, paquetes, lista_h):
 
 
 t_paquete = 64
-probabilidad_ruido = 90
+probabilidad_ruido = 30
 contenido_bytes = emisor()
 contenido_binario =convertir_a_bits(contenido_bytes)
 
