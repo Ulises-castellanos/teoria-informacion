@@ -18,21 +18,16 @@ class Nodo:
 def emisor():
   with open('prue4.mp3', 'rb') as mp3_file:
     contenido_binario = mp3_file.read()
-  return contenido_binario
-
-def convertir_a_bits(bytes_data):
-  bits = [format(byte, '08b') for byte in bytes_data]
+  bits = [format(byte, '08b') for byte in contenido_binario]
   bits_str = ''.join(bits)
-  return bits_str  
-
-def bits_a_bytes(bits_str):
-  grupos_de_bits = [bits_str[i:i+8] for i in range(0, len(bits_str), 8)]
-  bytes_data = [int(bits, 2) for bits in grupos_de_bits]
-  bytes_resultantes = bytes(bytes_data)
-  return bytes_resultantes
+  return bits_str 
 
 def transmisor(contenido_binario,t_paquete):
-  paquetes = dividir_paquetes(contenido_binario, t_paquete)
+  paquetes = []
+  for i in range(0, len(contenido_binario), t_paquete):
+    paquete = contenido_binario[i:i + t_paquete]
+    paquetes.append(paquete)
+
   prob = probabilidad(paquetes)
   paq_num = list(enumerate(paquetes, start=1))
   paquetes = [[nombre, numero] for numero, nombre in paq_num]
@@ -63,14 +58,6 @@ def transmisor(contenido_binario,t_paquete):
   paquetes = codificar(1, 0, paquetes, lista_h)
   print("Paquetes codificados\n",paquetes[:5],"\n")
   return paquetes, lista_h
-
-def dividir_paquetes(contenido_binario, t_paquete):
-  paquetes = []
-  pps = []
-  for i in range(0, len(contenido_binario), t_paquete):
-    paquete = contenido_binario[i:i + t_paquete]
-    paquetes.append(paquete)
-  return paquetes
 
 def canal(paquetes, prob_ruido):
   filas = 5
@@ -204,12 +191,15 @@ def ruido_perd(paq, prob_ruido):
     paq = None
   return paq
 
-
 def receptor(paquetes_con_ruido, lista_h):
   paquetes = codificar(0,1,paquetes_con_ruido, lista_h )
   print("Paquetes restablecidos\n",paquetes[:5],"\n")
-  contenido_original = unir_paquetes(paquetes)
-  return contenido_original
+  paquetes = [item[0] for item in paquetes]
+  contenido_original = ''.join(paquetes)
+  grupos_de_bits = [contenido_original[i:i+8] for i in range(0, len(contenido_original), 8)]
+  bytes_data = [int(bits, 2) for bits in grupos_de_bits]
+  bytes_resultantes = bytes(bytes_data)
+  return bytes_resultantes
 
 def unir_paquetes(paquetes):
   paquetes = [item[0] for item in paquetes]
@@ -355,17 +345,14 @@ def codificar(uno, dos, paquetes, lista_h):
 
 
 t_paquete = 64
-probabilidad_ruido = 30
-contenido_bytes = emisor()
-contenido_binario =convertir_a_bits(contenido_bytes)
+probabilidad_ruido = 15
+
+contenido_binario = emisor()
 
 paquetes, lista_h = transmisor(contenido_binario,t_paquete)
-#print(paquetes)
 
 paquetes_con_ruido = canal(paquetes, probabilidad_ruido)
 
 contenido_original = receptor(paquetes_con_ruido, lista_h)
-#print(entropia)
-bytes_resultantes = bits_a_bytes(contenido_original)
-Destino(bytes_resultantes)
 
+Destino(contenido_original)
