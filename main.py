@@ -4,17 +4,11 @@ import os
 import random
 import math
 from collections import Counter
+import hashlib
 
 entropia = 0
 
-class Nodo:
-  def __init__(self, nombre, dato):
-    self.nombre = nombre
-    self.dato = dato
-    self.izquierda = None
-    self.derecha = None
-    self.valor_binario = ""
-
+#Esquema de comunicacion 
 def emisor():
   with open('prue4.mp3', 'rb') as mp3_file:
     contenido_binario = mp3_file.read()
@@ -59,6 +53,7 @@ def transmisor(contenido_binario,t_paquete):
   print("Paquetes codificados\n",paquetes[:5],"\n")
   return paquetes, lista_h
 
+#Canal con modulacion
 def canal(paquetes, prob_ruido):
   filas = 5
   columnas = 2
@@ -69,6 +64,7 @@ def canal(paquetes, prob_ruido):
   pa_per =[]
   can_per = None
   fin = len(paquetes)
+  paquetes = hash(paquetes)
   while len(paquetes)> len(nuevos_paq):
     if len(paquetes)>0:
       if indice < len(paquetes):
@@ -191,22 +187,28 @@ def ruido_perd(paq, prob_ruido):
     paq = None
   return paq
 
-def receptor(paquetes_con_ruido, lista_h):
-  paquetes = codificar(0,1,paquetes_con_ruido, lista_h )
+def receptor(paquetes_hasheados, lista_h):
+
+  lista_h = hash_handshake(lista_h)
+
+  paq_codificados = []
+  for l in range(0,len(paquetes_hasheados)):
+    for n in range(0,len(paquetes_hasheados)):
+      if paquetes_hasheados[l][0] == lista_h[n][2]:
+        print("coinciden",paquetes_hasheados[l][0], lista_h[n][2])
+        paq_codificados.append([lista_h[n][1], paquetes_hasheados[l][1]])
+        break
+
+  paquetes = codificar(0,1,paq_codificados, lista_h )
   print("Paquetes restablecidos\n",paquetes[:5],"\n")
   paquetes = [item[0] for item in paquetes]
   contenido_original = ''.join(paquetes)
   grupos_de_bits = [contenido_original[i:i+8] for i in range(0, len(contenido_original), 8)]
   bytes_data = [int(bits, 2) for bits in grupos_de_bits]
-  bytes_resultantes = bytes(bytes_data)
-  return bytes_resultantes
+  contenido_bytes = bytes(bytes_data)
+  return contenido_bytes
 
-def unir_paquetes(paquetes):
-  paquetes = [item[0] for item in paquetes]
-  contenido_reensamblado = ''.join(paquetes)
-  return contenido_reensamblado
-
-def Destino(contenido_binario):
+def destino(contenido_binario):
   os.environ['SDL_AUDIODRIVER'] = 'directsound'
   pygame.init()
   mp3_stream = io.BytesIO(contenido_binario)
@@ -215,13 +217,20 @@ def Destino(contenido_binario):
   while pygame.mixer.music.get_busy():
     pygame.time.Clock().tick(10)
 
-
 def probabilidad(numeros):
   prob=[]
   rep = Counter(numeros)
   for i in rep:
     prob.append([i,rep[i]/len(numeros)])
   return prob
+
+class Nodo:
+  def __init__(self, nombre, dato):
+    self.nombre = nombre
+    self.dato = dato
+    self.izquierda = None
+    self.derecha = None
+    self.valor_binario = ""
 
 ### Primer metodo de codificacion Huffman
 def huffman(num_ord):
@@ -343,6 +352,16 @@ def codificar(uno, dos, paquetes, lista_h):
         break
   return paquetes
 
+def hash(paquetes):
+  for i in range(0,len(paquetes)):
+    paquetes[i][0] = hashlib.sha256( paquetes[i][0].encode()).hexdigest()
+  return paquetes
+
+def hash_handshake(lista_h):
+  for i in range(0,len(lista_h)):
+    hs = hashlib.sha256( lista_h[i][1].encode()).hexdigest()
+    lista_h[i].append(hs)
+  return lista_h
 
 t_paquete = 64
 probabilidad_ruido = 15
@@ -355,4 +374,4 @@ paquetes_con_ruido = canal(paquetes, probabilidad_ruido)
 
 contenido_original = receptor(paquetes_con_ruido, lista_h)
 
-Destino(contenido_original)
+destino(contenido_original)
