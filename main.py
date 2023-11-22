@@ -53,6 +53,12 @@ def transmisor(contenido_binario,t_paquete):
   print("Paquetes codificados\n",paquetes[:5],"\n")
   return paquetes, lista_h
 
+def ruido_perd(paq, prob_ruido):
+  num = random.randint(1, 100)
+  if num <= prob_ruido:
+    paq = None
+  return paq
+
 #Canal con modulacion
 def canal(paquetes, prob_ruido):
   filas = 5
@@ -179,28 +185,46 @@ def canal(paquetes, prob_ruido):
       if can_per != None:
         canales[can_per-1][0], canales[can_per-1][1] = None, None
       can_per = None
+  input("Paquetes recibidos con exito")
   return nuevos_paq
 
-def ruido_perd(paq, prob_ruido):
-  num = random.randint(1, 100)
-  if num <= prob_ruido:
-    paq = None
-  return paq
+def hash(paquetes):
+  for i in range(0,len(paquetes)):
+    paquetes[i][0] = hashlib.sha256( paquetes[i][0].encode()).hexdigest()
+  return paquetes
+
+def hash_handshake(lista_h):
+  for i in range(0,len(lista_h)):
+    hs = hashlib.sha256( lista_h[i][1].encode()).hexdigest()
+    lista_h[i].append(hs)
+  return lista_h
+
+def b_binario(hs, paquete):
+  hs_n = []
+  print("\nhash en handshake", [l[2] for l in hs] )
+  print("paquete",paquete)
+  print("hash de enmedio",hs[len(hs)//2][2])
+  if len(hs) == 2 and paquete == hs[0][2]: return hs[0][1]
+  elif paquete == hs[len(hs)//2][2]: return hs[len(hs)//2][1] 
+  elif paquete > hs[len(hs)//2][2]:
+    hs_n = hs[(len(hs) // 2):]
+    resultado = b_binario(hs_n, paquete)
+  elif paquete < hs[len(hs)//2][2]:
+    hs_n = hs[:(len(hs) // 2)+1]
+    resultado = b_binario(hs_n, paquete)
+  return resultado
 
 def receptor(paquetes_hasheados, lista_h):
-
   lista_h = hash_handshake(lista_h)
-
+  lista_h = sorted(lista_h, key=lambda x: x[2])
   paq_codificados = []
-  for l in range(0,len(paquetes_hasheados)):
-    for n in range(0,len(paquetes_hasheados)):
-      if paquetes_hasheados[l][0] == lista_h[n][2]:
-        print("coinciden",paquetes_hasheados[l][0], lista_h[n][2])
-        paq_codificados.append([lista_h[n][1], paquetes_hasheados[l][1]])
-        break
+  for i in paquetes_hasheados:
+    tempo = b_binario(lista_h, i[0])
+    paq_codificados.append([tempo, i[1]])
+    print("De hash a codificado",tempo)
 
   paquetes = codificar(0,1,paq_codificados, lista_h )
-  print("Paquetes restablecidos\n",paquetes[:5],"\n")
+  print("Paquetes restablecidos\n")
   paquetes = [item[0] for item in paquetes]
   contenido_original = ''.join(paquetes)
   grupos_de_bits = [contenido_original[i:i+8] for i in range(0, len(contenido_original), 8)]
@@ -352,18 +376,7 @@ def codificar(uno, dos, paquetes, lista_h):
         break
   return paquetes
 
-def hash(paquetes):
-  for i in range(0,len(paquetes)):
-    paquetes[i][0] = hashlib.sha256( paquetes[i][0].encode()).hexdigest()
-  return paquetes
-
-def hash_handshake(lista_h):
-  for i in range(0,len(lista_h)):
-    hs = hashlib.sha256( lista_h[i][1].encode()).hexdigest()
-    lista_h[i].append(hs)
-  return lista_h
-
-t_paquete = 64
+t_paquete = 1024
 probabilidad_ruido = 15
 
 contenido_binario = emisor()
