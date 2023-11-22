@@ -29,7 +29,7 @@ def transmisor(contenido_binario,t_paquete):
   res = int(input("Que codificacion quieres usar?\nHuffman = 1\nShannon-Fano=2\nInversor=3\nDelta=4\n"))
   
   if res == 1:
-    lista_h = huffman(prob)
+    handshake = huffman(prob)
   
   elif res == 2:
     nodos = []
@@ -37,21 +37,21 @@ def transmisor(contenido_binario,t_paquete):
       nodo = Nodo(nombre, numero)
       nodos.append(nodo)
     nodos = sf(nodos)
-    lista_h=[]
+    handshake=[]
     for i in nodos:
-      lista_h.append([i.nombre,i.valor_binario])
-    print("Lista handshake de Shannon-Fano\n",lista_h[:5],"\n")
+      handshake.append([i.nombre,i.valor_binario])
+    print("Lista handshake de Shannon-Fano\n",handshake[:5],"\n")
   
   elif res == 3:
-    lista_h = inversor(prob)
+    handshake = inversor(prob)
   
   elif res == 4:
-    lista_h = delta(prob)
+    handshake = delta(prob)
   
   print("Paquetes sin codificar\n",paquetes[:5],"\n")
-  paquetes = codificar(1, 0, paquetes, lista_h)
+  paquetes = codificar(1, 0, paquetes, handshake)
   print("Paquetes codificados\n",paquetes[:5],"\n")
-  return paquetes, lista_h
+  return paquetes, handshake
 
 def ruido_perd(paq, prob_ruido):
   num = random.randint(1, 100)
@@ -193,11 +193,11 @@ def hash(paquetes):
     paquetes[i][0] = hashlib.sha256( paquetes[i][0].encode()).hexdigest()
   return paquetes
 
-def hash_handshake(lista_h):
-  for i in range(0,len(lista_h)):
-    hs = hashlib.sha256( lista_h[i][1].encode()).hexdigest()
-    lista_h[i].append(hs)
-  return lista_h
+def hash_handshake(handshake):
+  for i in range(0,len(handshake)):
+    hs = hashlib.sha256( handshake[i][1].encode()).hexdigest()
+    handshake[i].append(hs)
+  return handshake
 
 def b_binario(hs, paquete):
   hs_n = []
@@ -214,16 +214,16 @@ def b_binario(hs, paquete):
     resultado = b_binario(hs_n, paquete)
   return resultado
 
-def receptor(paquetes_hasheados, lista_h):
-  lista_h = hash_handshake(lista_h)
-  lista_h = sorted(lista_h, key=lambda x: x[2])
+def receptor(paquetes_hasheados, handshake):
+  handshake = hash_handshake(handshake)
+  handshake = sorted(handshake, key=lambda x: x[2])
   paq_codificados = []
   for i in paquetes_hasheados:
-    tempo = b_binario(lista_h, i[0])
+    tempo = b_binario(handshake, i[0])
     paq_codificados.append([tempo, i[1]])
     print("De hash a codificado",tempo)
 
-  paquetes = codificar(0,1,paq_codificados, lista_h )
+  paquetes = codificar(0,1,paq_codificados, handshake )
   print("Paquetes restablecidos\n")
   paquetes = [item[0] for item in paquetes]
   contenido_original = ''.join(paquetes)
@@ -277,10 +277,10 @@ def huffman(num_ord):
   arbol_huffman = nodos[0]
   valor_binario=""
   asd=[]
-  lista_h = calcular_binario(arbol_huffman, valor_binario, asd)
+  handshake = calcular_binario(arbol_huffman, valor_binario, asd)
   #imprimir(arbol_huffman)
-  print("Lista handshake de Huffman\n",lista_h[:5],"\n")
-  return lista_h
+  print("Lista handshake de Huffman\n",handshake[:5],"\n")
+  return handshake
 
 def calcular_binario(arbol, valor_binario, asd):
   if arbol is not None:
@@ -336,7 +336,7 @@ def sf(nodos):
 ### Tercer metodo de codificacion Inversor
 ### Toma cada bit y lo convierte en su inverso, es decir convierte 1 a 0 y viceversa
 def inversor(prob):
-  lista_h = []
+  handshake = []
   for i in prob:
     paq_l = list(i[0])
     for n in range(len(paq_l)):
@@ -345,15 +345,15 @@ def inversor(prob):
       else:
         paq_l[n] = "1"
     uno = "".join(paq_l)
-    lista_h.append([i[0],uno])
-  print("Lista handshake de Inversor\n",lista_h[:5],"\n")
-  return lista_h
+    handshake.append([i[0],uno])
+  print("Lista handshake de Inversor\n",handshake[:5],"\n")
+  return handshake
 
 ### Cuarto metodo de codificacion Delta
 ### Conserva el primer bit, recorre el resto de los bits comparando el bit actual con el anterior, 
 ### si es el mismo se agrega un 0 y si es distinto se agrega 1
 def delta(prob):
-  lista_h= []
+  handshake= []
   for i in prob:
     delt = [i[0][0]]
     for n in range(1, len(i[0])):
@@ -364,13 +364,13 @@ def delta(prob):
       else:
         delt.append("1")
     var=''.join(delt)
-    lista_h.append([i[0],var])
-  print("Lista handshake de Delta\n",lista_h[:5],"\n")
-  return lista_h
+    handshake.append([i[0],var])
+  print("Lista handshake de Delta\n",handshake[:5],"\n")
+  return handshake
 
-def codificar(uno, dos, paquetes, lista_h):
+def codificar(uno, dos, paquetes, handshake):
   for i in range(len(paquetes)):
-    for h in lista_h:
+    for h in handshake:
       if paquetes[i][0] == h[dos]:
         paquetes[i][0] = h[uno]
         break
@@ -381,10 +381,10 @@ probabilidad_ruido = 15
 
 contenido_binario = emisor()
 
-paquetes, lista_h = transmisor(contenido_binario,t_paquete)
+paquetes, handshake = transmisor(contenido_binario,t_paquete)
 
 paquetes_con_ruido = canal(paquetes, probabilidad_ruido)
 
-contenido_original = receptor(paquetes_con_ruido, lista_h)
+contenido_original = receptor(paquetes_con_ruido, handshake)
 
 destino(contenido_original)
