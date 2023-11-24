@@ -2,7 +2,6 @@ import pygame
 import io
 import os
 import random
-import math
 from collections import Counter
 import hashlib
 
@@ -16,10 +15,10 @@ def emisor():
   bits_str = ''.join(bits)
   return bits_str 
 
-def transmisor(contenido_binario,t_paquete):
+def transmisor(contenido_binario,tamaño):
   paquetes = []
-  for i in range(0, len(contenido_binario), t_paquete):
-    paquete = contenido_binario[i:i + t_paquete]
+  for i in range(0, len(contenido_binario), tamaño):
+    paquete = contenido_binario[i:i + tamaño]
     paquetes.append(paquete)
 
   prob = probabilidad(paquetes)
@@ -185,7 +184,7 @@ def canal(paquetes, prob_ruido):
       if can_per != None:
         canales[can_per-1][0], canales[can_per-1][1] = None, None
       can_per = None
-  input("Paquetes recibidos con exito")
+  input("Paquetes recibidos con exito, presione enter")
   return nuevos_paq
 
 def hash(paquetes):
@@ -376,15 +375,15 @@ def codificar(uno, dos, paquetes, handshake):
         break
   return paquetes
 
-t_paquete = 1024
+tamaño = 1024
 probabilidad_ruido = 15
 
 contenido_binario = emisor()
 
-paquetes, handshake = transmisor(contenido_binario,t_paquete)
+paquetes, handshake = transmisor(contenido_binario,tamaño)
 
-paquetes_con_ruido = canal(paquetes, probabilidad_ruido)
+paquetes = canal(paquetes, probabilidad_ruido)
 
-contenido_original = receptor(paquetes_con_ruido, handshake)
+original = receptor(paquetes, handshake)
 
-destino(contenido_original)
+destino(original)
